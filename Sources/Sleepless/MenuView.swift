@@ -44,13 +44,20 @@ struct MenuView: View {
         }
     }
 
+    @ViewBuilder
     private var statusLine: some View {
+        let manual = manager.holds[SleepManager.manual]
+        let others = manager.holds.keys.filter { $0 != SleepManager.manual }.sorted()
+        let keptOnBy = others.count == 1 ? others[0] : "\(others.count) tasks"
         Group {
-            if let expiresAt = manager.expiresAt {
+            if let expiresAt = manual?.expiresAt {
                 Text("Awake · \(Text(expiresAt, style: .timer)) left")
                     .foregroundStyle(.orange)
-            } else if manager.isActive {
+            } else if manual != nil {
                 Text("Awake indefinitely")
+                    .foregroundStyle(.orange)
+            } else if !others.isEmpty {
+                Text("Awake · kept on by \(keptOnBy)")
                     .foregroundStyle(.orange)
             } else {
                 Text("Sleeping normally")
@@ -58,14 +65,19 @@ struct MenuView: View {
             }
         }
         .font(.system(size: 11, weight: .medium))
+        if manual != nil && !others.isEmpty {
+            Text("Also kept on by \(keptOnBy)")
+                .font(.system(size: 10))
+                .foregroundStyle(.secondary)
+        }
     }
 
     private var toggleButton: some View {
         Button {
             if manager.isActive {
-                manager.deactivate()
+                manager.releaseAll()
             } else {
-                manager.activate(for: manager.duration.seconds)
+                try? manager.hold(SleepManager.manual, for: manager.duration.seconds, pid: nil)
             }
         } label: {
             Text(manager.isActive ? "Let My Mac Sleep" : "Keep My Mac Awake")
