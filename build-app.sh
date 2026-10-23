@@ -8,9 +8,10 @@ BIN="$(swift build -c release --arch arm64 --arch x86_64 --show-bin-path)"
 
 APP="Sleepless.app"
 rm -rf "$APP"
-mkdir -p "$APP/Contents/MacOS"
+mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 
 cp "$BIN/Sleepless" "$APP/Contents/MacOS/Sleepless"
+cp Icon/Assets.car Icon/AppIcon.icns "$APP/Contents/Resources/"
 
 cat > "$APP/Contents/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
@@ -19,6 +20,10 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
 <dict>
     <key>CFBundleExecutable</key>
     <string>Sleepless</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
+    <key>CFBundleIconName</key>
+    <string>AppIcon</string>
     <key>CFBundleIdentifier</key>
     <string>dev.playground.sleepless</string>
     <key>CFBundleName</key>

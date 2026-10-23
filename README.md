@@ -36,6 +36,8 @@ The app is a universal binary that runs on Apple silicon and Intel Macs.
 so on another Mac Gatekeeper blocks the first launch. Allow it with
 **Open Anyway** in **System Settings → Privacy & Security**.
 
+After editing the icon, run `Icon/build-icon.sh` before `./build-app.sh`.
+
 To keep it around, move `Sleepless.app` to `/Applications` and (optionally)
 add it to **System Settings → General → Login Items** to launch at login.
 
@@ -47,5 +49,9 @@ Sources/Sleepless/
   SleeplessApp.swift               App entry point + MenuBarExtra scene
   MenuView.swift                   Popover UI
   SleepManager.swift               IOPMAssertion lifecycle, timer, saved settings
+Icon/
+  AppIcon.icon/                    Icon Composer source
+  build-icon.sh                    Regenerates Assets.car + AppIcon.icns (needs Xcode 26+)
+  Assets.car, AppIcon.icns         Compiled icon, copied into the .app
 build-app.sh                       Builds the universal .app and zips it
 ```
