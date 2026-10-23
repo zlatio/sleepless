@@ -2,7 +2,6 @@ import SwiftUI
 
 struct MenuView: View {
     @EnvironmentObject private var manager: SleepManager
-    @State private var duration: KeepAwakeDuration = .forever
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -46,21 +45,19 @@ struct MenuView: View {
     }
 
     private var statusLine: some View {
-        TimelineView(.periodic(from: .now, by: 1)) { _ in
-            Group {
-                if manager.isActive, let expiresAt = manager.expiresAt {
-                    Text("Awake · \(remainingString(until: expiresAt)) left")
-                        .foregroundStyle(.orange)
-                } else if manager.isActive {
-                    Text("Awake indefinitely")
-                        .foregroundStyle(.orange)
-                } else {
-                    Text("Sleeping normally")
-                        .foregroundStyle(.secondary)
-                }
+        Group {
+            if let expiresAt = manager.expiresAt {
+                Text("Awake · \(Text(expiresAt, style: .timer)) left")
+                    .foregroundStyle(.orange)
+            } else if manager.isActive {
+                Text("Awake indefinitely")
+                    .foregroundStyle(.orange)
+            } else {
+                Text("Sleeping normally")
+                    .foregroundStyle(.secondary)
             }
-            .font(.system(size: 11, weight: .medium))
         }
+        .font(.system(size: 11, weight: .medium))
     }
 
     private var toggleButton: some View {
@@ -68,7 +65,7 @@ struct MenuView: View {
             if manager.isActive {
                 manager.deactivate()
             } else {
-                manager.activate(for: duration.seconds)
+                manager.activate(for: manager.duration.seconds)
             }
         } label: {
             Text(manager.isActive ? "Let My Mac Sleep" : "Keep My Mac Awake")
@@ -96,18 +93,13 @@ struct MenuView: View {
                 .font(.system(size: 9.5, weight: .semibold))
                 .foregroundStyle(.tertiary)
                 .kerning(0.5)
-            Picker("Duration", selection: $duration) {
+            Picker("Duration", selection: $manager.duration) {
                 ForEach(KeepAwakeDuration.allCases) { option in
                     Text(option.label).tag(option)
                 }
             }
             .pickerStyle(.segmented)
             .labelsHidden()
-            .onChange(of: duration) { _, newValue in
-                if manager.isActive {
-                    manager.activate(for: newValue.seconds)
-                }
-            }
         }
     }
 
@@ -127,9 +119,11 @@ struct MenuView: View {
 
     private var footer: some View {
         HStack {
-            Text("v1.0")
-                .font(.system(size: 10))
-                .foregroundStyle(.tertiary)
+            if let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String {
+                Text("v\(version)")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.tertiary)
+            }
             Spacer()
             Button("Quit") {
                 NSApplication.shared.terminate(nil)
@@ -138,16 +132,5 @@ struct MenuView: View {
             .font(.system(size: 11, weight: .medium))
             .foregroundStyle(.secondary)
         }
-    }
-
-    private func remainingString(until date: Date) -> String {
-        let remaining = max(0, Int(date.timeIntervalSinceNow.rounded()))
-        let hours = remaining / 3600
-        let minutes = (remaining % 3600) / 60
-        let seconds = remaining % 60
-        if hours > 0 {
-            return String(format: "%d:%02d:%02d", hours, minutes, seconds)
-        }
-        return String(format: "%d:%02d", minutes, seconds)
     }
 }

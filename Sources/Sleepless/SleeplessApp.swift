@@ -7,11 +7,9 @@ struct SleeplessApp: App {
     @StateObject private var manager = SleepManager()
 
     var body: some Scene {
-        MenuBarExtra {
+        MenuBarExtra("Sleepless", systemImage: manager.isActive ? "cup.and.saucer.fill" : "moon.zzz") {
             MenuView()
                 .environmentObject(manager)
-        } label: {
-            Image(systemName: manager.isActive ? "cup.and.saucer.fill" : "moon.zzz")
         }
         .menuBarExtraStyle(.window)
     }

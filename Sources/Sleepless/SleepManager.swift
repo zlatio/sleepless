@@ -1,4 +1,4 @@
-import Foundation
+import AppKit
 import IOKit.pwr_mgt
 
 enum KeepAwakeDuration: String, CaseIterable, Identifiable {
@@ -33,23 +33,51 @@ enum KeepAwakeDuration: String, CaseIterable, Identifiable {
 
 @MainActor
 final class SleepManager: ObservableObject {
-    @Published private(set) var isActive = false
     @Published private(set) var expiresAt: Date?
-    @Published var keepDisplayAwake = true {
+    @Published var duration: KeepAwakeDuration {
         didSet {
-            guard isActive else { return }
-            // Swap the assertion type in place, preserving any running countdown.
-            let remaining = expiresAt.map { max(0, $0.timeIntervalSinceNow) }
-            activate(for: remaining)
+            UserDefaults.standard.set(duration.rawValue, forKey: "duration")
+            if isActive && duration != oldValue {
+                activate(for: duration.seconds)
+            }
         }
     }
 
-    private var assertionID: IOPMAssertionID = 0
-    private var hasAssertion = false
+    @Published var keepDisplayAwake: Bool {
+        didSet {
+            UserDefaults.standard.set(keepDisplayAwake, forKey: "keepDisplayAwake")
+            // Swap the assertion type in place, preserving any running countdown.
+            if isActive {
+                rearm()
+            }
+        }
+    }
+
+    @Published private var assertionID: IOPMAssertionID?
     private var expiryTimer: Timer?
 
-    func activate(for duration: TimeInterval?) {
-        releaseAssertion()
+    var isActive: Bool { assertionID != nil }
+
+    init() {
+        duration = UserDefaults.standard.string(forKey: "duration").flatMap(KeepAwakeDuration.init) ?? .forever
+        keepDisplayAwake = UserDefaults.standard.object(forKey: "keepDisplayAwake") as? Bool ?? true
+
+        // The expiry timer counts uptime, which pauses while the Mac sleeps, so re-arm it from the wall clock on wake.
+        NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didWakeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self, self.expiresAt != nil else { return }
+
+                self.rearm()
+            }
+        }
+    }
+
+    func activate(for seconds: TimeInterval?) {
+        deactivate()
 
         let type = keepDisplayAwake
             ? kIOPMAssertionTypePreventUserIdleDisplaySleep
@@ -62,34 +90,31 @@ final class SleepManager: ObservableObject {
             "Sleepless is keeping this Mac awake" as CFString,
             &id
         )
+
         guard result == kIOReturnSuccess else { return }
 
         assertionID = id
-        hasAssertion = true
-        isActive = true
 
-        if let duration {
-            expiresAt = Date().addingTimeInterval(duration)
-            expiryTimer = Timer.scheduledTimer(withTimeInterval: duration, repeats: false) { [weak self] _ in
-                Task { @MainActor in self?.deactivate() }
+        if let seconds {
+            expiresAt = Date().addingTimeInterval(seconds)
+            expiryTimer = Timer.scheduledTimer(withTimeInterval: seconds, repeats: false) { [weak self] _ in
+                MainActor.assumeIsolated { self?.deactivate() }
             }
-        } else {
-            expiresAt = nil
         }
     }
 
     func deactivate() {
-        releaseAssertion()
-        isActive = false
+        expiryTimer?.invalidate()
+        expiryTimer = nil
+        if let assertionID {
+            IOPMAssertionRelease(assertionID)
+            self.assertionID = nil
+        }
         expiresAt = nil
     }
 
-    private func releaseAssertion() {
-        expiryTimer?.invalidate()
-        expiryTimer = nil
-        if hasAssertion {
-            IOPMAssertionRelease(assertionID)
-            hasAssertion = false
-        }
+    /// Re-arms with the wall-clock time left on the countdown, if any.
+    private func rearm() {
+        activate(for: expiresAt.map { max(0, $0.timeIntervalSinceNow) })
     }
 }
