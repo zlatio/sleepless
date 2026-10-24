@@ -98,6 +98,16 @@ shells may not have `~/.local/bin` on PATH.
 Each prompt holds `claude-<pid>` until Claude finishes a turn with no
 background tasks still running, the session ends, or the Claude process exits.
 
+### Agent skill
+
+`skills/sleepless` is a Claude Code skill that tells agents how to use the CLI:
+which hold fits which job, and how to clean up after themselves. To install it
+for every project:
+
+```bash
+ln -s "$PWD/skills/sleepless" ~/.claude/skills/sleepless
+```
+
 ## Project layout
 
 ```
@@ -112,5 +122,6 @@ Icon/
   AppIcon.icon/                    Icon Composer source
   build-icon.sh                    Regenerates Assets.car + AppIcon.icns (needs Xcode 26+)
   Assets.car, AppIcon.icns         Compiled icon, copied into the .app
+skills/sleepless/SKILL.md          Claude Code skill for the CLI
 build-app.sh                       Builds the universal .app and zips it
 ```
