@@ -1,5 +1,5 @@
 #!/bin/bash
-# Builds a universal Sleepless.app and Sleepless.zip into the project root.
+# Builds a universal Sleepless.app, Sleepless.zip and Sleepless.alfredworkflow into the project root.
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -49,4 +49,7 @@ codesign --force --sign - "$APP"
 # --norsrc leaves out ._ xattr entries, which break the signature when the zip is extracted with unzip.
 ditto -c -k --norsrc --keepParent "$APP" Sleepless.zip
 
-echo "Built $APP and Sleepless.zip — run with: open $APP"
+# An Alfred workflow file is a zip of the workflow folder's contents.
+ditto -c -k --norsrc Alfred Sleepless.alfredworkflow
+
+echo "Built $APP, Sleepless.zip and Sleepless.alfredworkflow — run with: open $APP"

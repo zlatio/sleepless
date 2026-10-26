@@ -21,5 +21,7 @@ xcrun actool "$PWD/AppIcon.icon" \
     --output-format human-readable-text
 
 cp "$OUT/Assets.car" "$OUT/AppIcon.icns" .
+# The Alfred workflow shows the same icon.
+sips -s format png -Z 256 AppIcon.icns --out ../Alfred/icon.png >/dev/null
 
-echo "Wrote Icon/Assets.car and Icon/AppIcon.icns"
+echo "Wrote Icon/Assets.car, Icon/AppIcon.icns and Alfred/icon.png"

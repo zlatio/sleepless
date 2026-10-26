@@ -22,7 +22,7 @@ Mac to sleep, same as with `caffeinate`.
 ## Build & run
 
 ```bash
-./build-app.sh      # builds Sleepless.app and Sleepless.zip in the project root
+./build-app.sh      # builds Sleepless.app, Sleepless.zip and Sleepless.alfredworkflow
 open Sleepless.app
 ```
 
@@ -108,6 +108,20 @@ for every project:
 ln -s "$PWD/skills/sleepless" ~/.claude/skills/sleepless
 ```
 
+### Alfred workflow
+
+`Alfred/` is an Alfred 5 workflow, which needs the Powerpack. `./build-app.sh`
+packs it into `Sleepless.alfredworkflow`. Open that file to install it.
+
+Type `sleepless` in Alfred to see whether the Mac is awake. From there you can
+keep it awake, let it sleep, pick a duration, or release one hold when several
+are active. Hold ⌥ on a duration to flip the display setting. The workflow also
+has a hotkey trigger with no key set. Give it one in Alfred to toggle Sleepless
+without typing.
+
+The workflow looks for the app in `/Applications`, then for a running copy. If
+the app lives elsewhere, set its location in the workflow's configuration.
+
 ## Project layout
 
 ```
@@ -120,8 +134,9 @@ Sources/Sleepless/
   CLI.swift                        The sleepless command line
 Icon/
   AppIcon.icon/                    Icon Composer source
-  build-icon.sh                    Regenerates Assets.car + AppIcon.icns (needs Xcode 26+)
+  build-icon.sh                    Regenerates Assets.car, AppIcon.icns and Alfred/icon.png (needs Xcode 26+)
   Assets.car, AppIcon.icns         Compiled icon, copied into the .app
 skills/sleepless/SKILL.md          Claude Code skill for the CLI
-build-app.sh                       Builds the universal .app and zips it
+Alfred/                            Alfred workflow, packed by build-app.sh
+build-app.sh                       Builds the universal .app, its zip and the Alfred workflow
 ```

@@ -1,0 +1,9 @@
+#!/bin/zsh
+# Runs the Sleepless CLI from wherever the app is: the location set in the workflow's configuration,
+# /Applications, or the copy that is running. Alfred's PATH doesn't include ~/.local/bin.
+for app in ${app_path/#\~/$HOME} /Applications/Sleepless.app; do
+  [[ -x $app/Contents/MacOS/Sleepless ]] && exec $app/Contents/MacOS/Sleepless "$@"
+done
+pid=$(pgrep -xo Sleepless) && exec "$(ps -o comm= -p $pid)" "$@"
+print -u2 "Can't find Sleepless.app. Set its location in the workflow's configuration."
+exit 1
