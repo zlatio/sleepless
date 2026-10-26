@@ -76,8 +76,13 @@ session, so it can't reach the app from an SSH session.
 
 ### Claude Code hooks
 
-Add this to `~/.claude/settings.json`. It uses the full path because hook
-shells may not have `~/.local/bin` on PATH.
+The popover's Integrations section shows whether the hooks are set up. Its
+Set up button adds them to `~/.claude/settings.json` with the app's current
+location, keeps every other hook, and saves the old file as
+`settings.json.sleepless-backup`. Run it again after moving the app.
+
+To add them by hand, put this in `~/.claude/settings.json`. It uses the full
+path because hook shells may not have `~/.local/bin` on PATH.
 
 ```json
 {
@@ -132,6 +137,7 @@ Sources/Sleepless/
   SleepManager.swift               Holds, IOPMAssertion lifecycle, saved settings
   ControlPort.swift                CLI-to-app message format + the app's listener
   CLI.swift                        The sleepless command line
+  ClaudeHooks.swift                Checks and sets up the Claude Code hooks
 Icon/
   AppIcon.icon/                    Icon Composer source
   build-icon.sh                    Regenerates Assets.car, AppIcon.icns and Alfred/icon.png (needs Xcode 26+)

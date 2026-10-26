@@ -2,6 +2,8 @@ import SwiftUI
 
 struct MenuView: View {
     @EnvironmentObject private var manager: SleepManager
+    @State private var hooksStatus: ClaudeHooks.Status?
+    @State private var hooksError: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -9,11 +11,14 @@ struct MenuView: View {
             toggleButton
             durationPicker
             displayToggle
+            integrations
             Divider()
             footer
         }
         .padding(16)
         .frame(width: 280)
+        // Checked each time the popover opens, so edits made elsewhere show up.
+        .onAppear { hooksStatus = ClaudeHooks.status() }
     }
 
     private var header: some View {
@@ -103,10 +108,7 @@ struct MenuView: View {
 
     private var durationPicker: some View {
         VStack(alignment: .leading, spacing: 5) {
-            Text("DURATION")
-                .font(.system(size: 9.5, weight: .semibold))
-                .foregroundStyle(.tertiary)
-                .kerning(0.5)
+            sectionLabel("DURATION")
             Picker("Duration", selection: $manager.duration) {
                 ForEach(KeepAwakeDuration.allCases) { option in
                     Text(option.label).tag(option)
@@ -131,6 +133,59 @@ struct MenuView: View {
         }
         .toggleStyle(.switch)
         .controlSize(.mini)
+    }
+
+    @ViewBuilder
+    private var integrations: some View {
+        if let hooksStatus {
+            VStack(alignment: .leading, spacing: 5) {
+                sectionLabel("INTEGRATIONS")
+                HStack(spacing: 8) {
+                    Image(systemName: hooksStatus == .setUp ? "checkmark.circle.fill" : "circle.dashed")
+                        .font(.system(size: 14))
+                        .foregroundStyle(hooksStatus == .setUp ? .green : .secondary)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("Claude Code hooks")
+                            .font(.system(size: 12))
+                        Group {
+                            if let hooksError {
+                                Text(hooksError)
+                                    .foregroundStyle(.red)
+                            } else if case .notSetUp(let reason) = hooksStatus {
+                                Text(reason)
+                                    .foregroundStyle(.secondary)
+                            } else {
+                                Text("Agents keep the Mac awake while they work")
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .font(.system(size: 10))
+                        .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Spacer()
+                    // From `swift run` the binary sits in .build, which is no place for a hook to point.
+                    if hooksStatus != .setUp && Bundle.main.bundleURL.pathExtension == "app" {
+                        Button("Set up") {
+                            do {
+                                try ClaudeHooks.install()
+                                hooksError = nil
+                            } catch {
+                                hooksError = error.localizedDescription
+                            }
+                            self.hooksStatus = ClaudeHooks.status()
+                        }
+                        .controlSize(.small)
+                    }
+                }
+            }
+        }
+    }
+
+    private func sectionLabel(_ title: String) -> some View {
+        Text(title)
+            .font(.system(size: 9.5, weight: .semibold))
+            .foregroundStyle(.tertiary)
+            .kerning(0.5)
     }
 
     private var footer: some View {
