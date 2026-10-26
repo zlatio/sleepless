@@ -96,6 +96,8 @@ struct MenuView: View {
                 .foregroundStyle(manager.isActive ? Color.primary : .white)
         }
         .buttonStyle(.plain)
+        // The popover opens with this button focused, and the focus ring doesn't follow its rounded shape.
+        .focusEffectDisabled()
         .animation(.easeInOut(duration: 0.2), value: manager.isActive)
     }
 
@@ -123,6 +125,8 @@ struct MenuView: View {
                 Text("Off lets the screen dim while the Mac stays awake")
                     .font(.system(size: 10))
                     .foregroundStyle(.secondary)
+                    // Wraps onto a second line instead of truncating.
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
         .toggleStyle(.switch)
